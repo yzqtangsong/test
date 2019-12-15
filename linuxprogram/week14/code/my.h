@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <sys/time.h>
 #include <wait.h>
 #include <errno.h>
 #include <pthread.h>

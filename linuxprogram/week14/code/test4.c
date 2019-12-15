@@ -1,54 +1,49 @@
 #include "my.h"
-
-#define NUM_THREADS 4
-
-struct sarg
-{
-	int no;
+struct sarg{
 	int n;
+	int m;
 };
-struct rarg
-{
+struct rarg{
 	int s;
 	long t;
 };
-void *fun(void *t)
-{
-	pthread_t my_tid;
-	struct sarg *pt=(struct sarg *)t;
-	struct rarg *pk=(struct rarg *)t;
-	int s=0;
-	
-	for(int i=0;i<=pk->n;i++)
-	{
+
+void *fun(void *n){
+	struct sarg *pt=(struct sarg *)n;
+	struct rarg *pk=(struct rarg *)malloc(sizeof(struct rarg));
+	struct timeval tv1,tv2;
+	struct timezone tz;
+	int i,s=0;
+	gettimeofday(&tv1,&tz);
+	for(i=0;i<pt->m;i++){
 		s+=i;
 	}
-	my_tid =pthread_self();		
-	printf("Thread :%d mt tid is %lx,Hello world\n",(int)pk->no+1,my_tid);
-	printf("Thread :%d sum 1 to %d is %d\n",(int)pk->no,pk->n,s);
-	pthread_exit(my_tid,(void *)&pk);
-	
-	return 0;
+	gettimeofday(&tv2,&tz);
+	printf("worker thread %d sum=%d\n",pt->n,s);
+	pk->s=s;
+	pk->t=tv2.tv_usec-tv1.tv_usec;
+	printf("%d:pk.s=%d,pk.t=%ld\n",pt->n,pk->s,pk->t);
+	pthread_exit((void *)pk);
+	return (void *)0;
 }
 
-int main()
-{
-	pthread_t tid;
-	int rv ,t;
-	struct info a[4];
-	for(t=0;t<NUM_THREADS;t++)
-	{
-		a[t].no=t;
-	    a[t].n= 100*(t+1);
-		rv=pthread_create(&tid,NULL,(void *(*)())hello,(void*)&a[t]);
-		if(rv!=0)
-		{
-			printf("pthread create is not created...");
+int main(){
+	pthread_t tid[4];
+	int ret[4],i;
+	struct rarg v[4];
+	struct sarg s[4];
+	for(i=0;i<4;i++){
+		s[i].n=i+1;
+		s[i].m=10000*(i+1);
+		ret[i]=pthread_create(&tid[i],NULL,fun,(void *)&s[i]);
+		if(ret[i]!=0){
+			perror("failed!\n");
 			return -1;
-		}
-		printf("create thread %lx\n",tid);
+		}	
+		pthread_join(tid[i],(void *)&v[i]);
 	}
-	printf("GOOD bye\n");
-	pthread_exit(NULL);	
-
+	for(i=0;i<4;i++){
+		printf("sum=%d,time=%ld\n",v[i].s,v[i].t);
+	}
+	return 0;
 }
